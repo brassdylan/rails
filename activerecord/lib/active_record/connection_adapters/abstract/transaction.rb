@@ -140,7 +140,9 @@ module ActiveRecord
       end
 
       def before_commit_records
-        records.uniq.each(&:before_committed!) if records && @run_commit_callbacks
+        # Order records from newest to oldest so if there are multiple instances of a single record,
+        # the commit callbacks run on the most recent of them instead of an arbitrary one.
+        records.sort_by { |r| -(r[r.class.locking_column] || 0) }.uniq.each(&:before_committed!) if records && @run_commit_callbacks
       end
 
       def commit_records
